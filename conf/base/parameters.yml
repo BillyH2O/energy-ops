@@ -19,7 +19,7 @@ LSTM_dropout: 0.0
 LSTM_learning_rate: 0.001
 
 # Paramètres pour auto_ml
-max_evals: 1
+max_evals: 3
 mlflowEnabled: True
 mlflowExperimentId: 1
 

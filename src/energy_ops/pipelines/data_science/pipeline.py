@@ -67,6 +67,7 @@ def create_pipeline(**kwargs) -> Pipeline:
                     "y_train",
                     "X_test",
                     "y_test",
+                    "scaler",
                     "params:max_evals",
                     "params:mlflowEnabled",
                     "params:mlflowExperimentId",

@@ -81,18 +81,18 @@ def scale_data(df: pd.DataFrame) -> pd.DataFrame:
     ]
     scaler = MinMaxScaler()
     df[columns_to_scale] = scaler.fit_transform(df[columns_to_scale])
-    return df
+    return {"scaled_df": df, "scaler": scaler}
 
 
-def create_sequences(df: pd.DataFrame, seq_length: int):
+def create_sequences(scaled_df: pd.DataFrame, seq_length: int):
     """
     Construit X, y pour la prédiction de 'Consumption' (fenêtre=seq_length).
     """
     sequences = []
     labels = []
-    for i in range(len(df) - seq_length):
-        seq = df.iloc[i : i + seq_length].values
-        label = df["Consumption"].iloc[i + seq_length]
+    for i in range(len(scaled_df) - seq_length):
+        seq = scaled_df.iloc[i : i + seq_length].values
+        label = scaled_df["Consumption"].iloc[i + seq_length]
         sequences.append(seq)
         labels.append(label)
     X = np.array(sequences)

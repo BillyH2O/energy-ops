@@ -21,7 +21,7 @@ MODELS = [
             "units_2": hp.quniform("rnn_units_2", 16, 64, 16),
             "dropout": hp.uniform("rnn_dropout", 0.0, 0.4),
             "learning_rate": hp.loguniform("rnn_lr", np.log(1e-4), np.log(1e-2)),
-            "epochs": hp.quniform("rnn_epochs", 1, 3, 1),  # 5, 15, 1
+            "epochs": hp.quniform("rnn_epochs", 5, 15, 1),  # 5, 15, 1
             "batch_size": hp.choice("rnn_batch_size", [16, 32]),
         },
     },
@@ -33,7 +33,7 @@ MODELS = [
             "units_2": hp.quniform("lstm_units_2", 16, 64, 16),
             "dropout": hp.uniform("lstm_dropout", 0.0, 0.4),
             "learning_rate": hp.loguniform("lstm_lr", np.log(1e-4), np.log(1e-2)),
-            "epochs": hp.quniform("lstm_epochs", 1, 3, 1),  # 5, 15, 1
+            "epochs": hp.quniform("lstm_epochs", 5, 15, 1),  # 1, 3, 1
             "batch_size": hp.choice("lstm_batch_size", [16, 32]),
         },
     },
@@ -272,6 +272,7 @@ def auto_ml(
     y_train: np.ndarray,
     X_test: np.ndarray,
     y_test: np.ndarray,
+    scaler,
     max_evals: int = 1,
     log_to_mlflow: bool = False,
     experiment_id: int = -1,
@@ -285,7 +286,7 @@ def auto_ml(
     run_id = ""
     results = []
 
-    # Réduire à 10% des données pour les tests
+    """# Réduire à 10% des données pour les tests
     subset_size = int(0.01 * len(X_train))
     X_train_subset = X_train[:subset_size]
     y_train_subset = y_train[:subset_size]
@@ -299,7 +300,7 @@ def auto_ml(
         y_train_subset,
         X_test_subset,
         y_test_subset,
-    )
+    )"""
 
     if log_to_mlflow:
         mlflow.set_tracking_uri(os.getenv("MLFLOW_SERVER"))
@@ -384,6 +385,9 @@ def auto_ml(
                     f"data/08_reporting/{result['model_name']}_actual_vs_pred.png",
                     artifact_path="plots",
                 )"""
+            mlflow.log_artifact(
+                "data/04_feature/scaler.pkl", artifact_path="transformations"
+            )
             mlflow.keras.log_model(best_model, "model")
 
     finally:
