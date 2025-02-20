@@ -1,8 +1,8 @@
 import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
 
+# import pandas as pd
+# import seaborn as sns
+import matplotlib.pyplot as plt
 from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
 
 import tensorflow as tf
@@ -104,7 +104,7 @@ def evaluate_rnn_model(rnn_model, X_test: np.ndarray, y_test: np.ndarray):
     mse = mean_squared_error(y_test, rnn_predictions)
     rmse = np.sqrt(mse)
 
-    print(f"=== Simple RNN ===")
+    print("=== Simple RNN ===")
     print(f"R² Score: {r2}")
     print(f"MAE       : {mae}")
     print(f"MSE       : {mse}")
@@ -185,7 +185,7 @@ def evaluate_lstm_model(model, X_test: np.ndarray, y_test: np.ndarray):
     mse = mean_squared_error(y_test, predictions)
     rmse = np.sqrt(mse)
 
-    print(f"=== LSTM ===")
+    print("=== LSTM ===")
     print(f"R² Score: {r2}")
     print(f"MAE       : {mae}")
     print(f"MSE       : {mse}")

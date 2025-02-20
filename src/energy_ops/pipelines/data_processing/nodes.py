@@ -1,11 +1,13 @@
 import pandas as pd
 import numpy as np
-import seaborn as sns
-import matplotlib.pyplot as plt
+
+# import seaborn as sns
+# import matplotlib.pyplot as plt
 
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
-from pandas.plotting import lag_plot, autocorrelation_plot
+
+# from pandas.plotting import lag_plot, autocorrelation_plot
 
 
 def run_eda(df: pd.DataFrame) -> None:
@@ -98,25 +100,15 @@ def create_sequences(df: pd.DataFrame, seq_length: int):
     return X, y
 
 
-import pandas as pd
-
-
 def split_dataset0(X: np.ndarray, y: np.ndarray, test_ratio: float):
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=test_ratio, shuffle=False
     )
     # Convertir en DataFrame
-    # NB: Si X est 3D, vous devez décider comment l'aplatir en 2D pour CSV
-    shape_3d = X_train.shape  # ex: (nb_samples, seq_length, nb_features)
-    # Applatir si vous voulez absolument un CSV
-    X_train_2d = X_train.reshape(X_train.shape[0], -1)
-    X_test_2d = X_test.reshape(X_test.shape[0], -1)
-
     X_train_df = pd.DataFrame(X_train)
     X_test_df = pd.DataFrame(X_test)
     y_train_df = pd.DataFrame(y_train, columns=["target"])  # 1D -> 2D
     y_test_df = pd.DataFrame(y_test, columns=["target"])
-
     return X_train_df, X_test_df, y_train_df, y_test_df
 
 
