@@ -1,15 +1,30 @@
+# Paramètres globaux
 SEQ_LENGTH: 24
 TEST_RATIO: 0.2
 
-RNN_EPOCHS: 5
-RNN_BATCH_SIZE: 32
+# Paramètres pour RNN
+RNN_epochs: 5
+RNN_batch_size: 32
+RNN_units_1: 50
+RNN_units_2: 50
+RNN_dropout: 0.0
+RNN_learning_rate: 0.001
 
-LSTM_EPOCHS: 5
-LSTM_BATCH_SIZE: 32
+# Paramètres pour LSTM
+LSTM_epochs: 5
+LSTM_batch_size: 32
+LSTM_units_1: 50
+LSTM_units_2: 50
+LSTM_dropout: 0.0
+LSTM_learning_rate: 0.001
 
-MAX_EVALS: 5
+# Paramètres pour auto_ml
+max_evals: 1
+mlflowEnabled: True
+mlflowExperimentId: 1
 
-MODEL_NAME: "LSTM"
 
 gcp_project_id: "energy-ops-access"
 gcs_primary_folder: "energy-ops-bucket/primary/data"
+MODEL_NAME: "LSTM"
+mlflow_model_registry: "energy_forecast_model"
