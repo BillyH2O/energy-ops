@@ -20,6 +20,7 @@ def register_pipelines() -> Dict[str, Pipeline]:
 
     # 2) On retourne un dictionnaire {nom: pipeline}
     return {
+        "__default__": p_loading,
         "loading": p_loading,
         "data_processing": p_processing,
         "data_science": p_science,
