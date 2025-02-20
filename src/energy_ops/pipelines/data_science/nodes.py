@@ -1,4 +1,6 @@
 import numpy as np
+import mlflow
+import mlflow.keras
 
 # import pandas as pd
 # import seaborn as sns
@@ -44,6 +46,10 @@ MODELS = [
     },
 ]
 
+# mlflow.set_tracking_uri("http://127.0.0.1:5000")
+mlflow.set_tracking_uri("http://34.38.243.113")
+mlflow.set_experiment("energy_forecast")
+
 
 #############################################################################
 # 2) Fonctions "training" & "evaluation" (extraits de votre code)
@@ -65,30 +71,45 @@ def train_rnn_model(
     seq_length = X_train.shape[1]
     nb_features = X_train.shape[2]
 
-    rnn_model = Sequential(
-        [
-            SimpleRNN(
-                units_1, return_sequences=True, input_shape=(seq_length, nb_features)
-            ),
-            Dropout(dropout),
-            SimpleRNN(units_2),
-            Dropout(dropout),
-            Dense(1),
-        ]
-    )
-    opt = Adam(learning_rate=learning_rate)
-    rnn_model.compile(optimizer=opt, loss="mean_squared_error")
+    with mlflow.start_run(run_name="train_rnn_model"):
+        # 1) Log des hyperparamètres
+        mlflow.log_param("rnn_epochs", rnn_epochs)
+        mlflow.log_param("rnn_batch_size", rnn_batch_size)
+        mlflow.log_param("rnn_units_1", units_1)
+        mlflow.log_param("rnn_units_2", units_2)
+        mlflow.log_param("rnn_dropout", dropout)
+        mlflow.log_param("rnn_lr", learning_rate)
 
-    history = rnn_model.fit(
-        X_train,
-        y_train,
-        epochs=rnn_epochs,
-        batch_size=rnn_batch_size,
-        validation_split=0.2,
-        verbose=1,
-    )
+        rnn_model = Sequential(
+            [
+                SimpleRNN(
+                    units_1,
+                    return_sequences=True,
+                    input_shape=(seq_length, nb_features),
+                ),
+                Dropout(dropout),
+                SimpleRNN(units_2),
+                Dropout(dropout),
+                Dense(1),
+            ]
+        )
+        opt = Adam(learning_rate=learning_rate)
+        rnn_model.compile(optimizer=opt, loss="mean_squared_error")
 
-    rnn_model.save("data/06_models/rnn_basique.h5")
+        history = rnn_model.fit(
+            X_train,
+            y_train,
+            epochs=rnn_epochs,
+            batch_size=rnn_batch_size,
+            validation_split=0.2,
+            verbose=1,
+        )
+
+        val_loss_final = history.history["val_loss"][-1]
+        mlflow.log_metric("val_loss", val_loss_final)
+        mlflow.keras.log_model(rnn_model, artifact_path="rnn_model_artifact")
+
+        rnn_model.save("data/06_models/rnn_basique.h5")
 
     return rnn_model, history
 
@@ -97,31 +118,41 @@ def evaluate_rnn_model(rnn_model, X_test: np.ndarray, y_test: np.ndarray):
     """
     Fait la prédiction du RNN, calcule R², RMSE, etc. et affiche un plot.
     """
-    rnn_predictions = rnn_model.predict(X_test)
 
-    r2 = r2_score(y_test, rnn_predictions)
-    mae = mean_absolute_error(y_test, rnn_predictions)
-    mse = mean_squared_error(y_test, rnn_predictions)
-    rmse = np.sqrt(mse)
+    with mlflow.start_run(run_name="evaluate_rnn_model"):
 
-    print("=== Simple RNN ===")
-    print(f"R² Score: {r2}")
-    print(f"MAE       : {mae}")
-    print(f"MSE       : {mse}")
-    print(f"RMSE      : {rmse}")
+        rnn_predictions = rnn_model.predict(X_test)
 
-    # Plot
-    plt.figure(figsize=(10, 6))
-    plt.plot(y_test[:200], label="Actual", color="blue")
-    plt.plot(rnn_predictions[:200], label="Predicted", color="red", linestyle="dashed")
-    plt.title("Simple RNN - Actual vs Predicted Consumption")
-    plt.xlabel("Time")
-    plt.ylabel("Consumption")
-    plt.legend()
-    plt.grid(True)
-    plt.savefig("08_reporting_figures/rnn_actual_vs_pred.png")
-    plt.show()
-    # ou plt.savefig(...)
+        r2 = r2_score(y_test, rnn_predictions)
+        mae = mean_absolute_error(y_test, rnn_predictions)
+        mse = mean_squared_error(y_test, rnn_predictions)
+        rmse = np.sqrt(mse)
+
+        print("=== Simple RNN ===")
+        print(f"R² Score: {r2}")
+        print(f"MAE       : {mae}")
+        print(f"MSE       : {mse}")
+        print(f"RMSE      : {rmse}")
+
+        mlflow.log_metric("test_r2", r2)
+        mlflow.log_metric("test_mae", mae)
+        mlflow.log_metric("test_rmse", rmse)
+
+        # Plot
+        plt.figure(figsize=(10, 6))
+        plt.plot(y_test[:200], label="Actual", color="blue")
+        plt.plot(
+            rnn_predictions[:200], label="Predicted", color="red", linestyle="dashed"
+        )
+        plt.title("Simple RNN - Actual vs Predicted Consumption")
+        plt.xlabel("Time")
+        plt.ylabel("Consumption")
+        plt.legend()
+        plt.grid(True)
+        fig_path = "data/08_reporting/figures/rnn_actual_vs_pred.png"
+        plt.savefig(fig_path)
+        # plt.show()
+        mlflow.log_artifact(fig_path, artifact_path="figures")
 
 
 def train_lstm_model(
@@ -140,36 +171,52 @@ def train_lstm_model(
     seq_length = X_train.shape[1]
     nb_features = X_train.shape[2]
 
-    model = Sequential(
-        [
-            LSTM(units_1, return_sequences=True, input_shape=(seq_length, nb_features)),
-            Dropout(dropout),
-            LSTM(units_2),
-            Dropout(dropout),
-            Dense(1),
-        ]
-    )
-    opt = Adam(learning_rate=learning_rate)
-    model.compile(optimizer=opt, loss="mean_squared_error")
+    with mlflow.start_run(run_name="train_lstm_model"):
+        mlflow.log_param("lstm_epochs", lstm_epochs)
+        mlflow.log_param("lstm_batch_size", lstm_batch_size)
+        mlflow.log_param("lstm_units_1", units_1)
+        mlflow.log_param("lstm_units_2", units_2)
+        mlflow.log_param("lstm_dropout", dropout)
+        mlflow.log_param("lstm_lr", learning_rate)
 
-    early_stopping = tf.keras.callbacks.EarlyStopping(
-        monitor="val_loss", patience=3, restore_best_weights=True
-    )
-    reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(
-        monitor="val_loss", factor=0.5, patience=2
-    )
+        model = Sequential(
+            [
+                LSTM(
+                    units_1,
+                    return_sequences=True,
+                    input_shape=(seq_length, nb_features),
+                ),
+                Dropout(dropout),
+                LSTM(units_2),
+                Dropout(dropout),
+                Dense(1),
+            ]
+        )
+        opt = Adam(learning_rate=learning_rate)
+        model.compile(optimizer=opt, loss="mean_squared_error")
 
-    history = model.fit(
-        X_train,
-        y_train,
-        epochs=lstm_epochs,
-        batch_size=lstm_batch_size,
-        validation_split=0.2,
-        callbacks=[early_stopping, reduce_lr],
-        verbose=1,
-    )
+        early_stopping = tf.keras.callbacks.EarlyStopping(
+            monitor="val_loss", patience=3, restore_best_weights=True
+        )
+        reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(
+            monitor="val_loss", factor=0.5, patience=2
+        )
 
-    model.save("data/06_models/lstm_basique.h5")
+        history = model.fit(
+            X_train,
+            y_train,
+            epochs=lstm_epochs,
+            batch_size=lstm_batch_size,
+            validation_split=0.2,
+            callbacks=[early_stopping, reduce_lr],
+            verbose=1,
+        )
+
+        val_loss_final = history.history["val_loss"][-1]
+        mlflow.log_metric("val_loss", val_loss_final)
+        mlflow.keras.log_model(model, artifact_path="lstm_model_artifact")
+
+        model.save("data/06_models/lstm_basique.h5")
 
     return model, history
 
@@ -178,33 +225,39 @@ def evaluate_lstm_model(model, X_test: np.ndarray, y_test: np.ndarray):
     """
     Fait la prédiction du LSTM, calcule R², RMSE, etc. et affiche un plot.
     """
-    predictions = model.predict(X_test)
 
-    r2 = r2_score(y_test, predictions)
-    mae = mean_absolute_error(y_test, predictions)
-    mse = mean_squared_error(y_test, predictions)
-    rmse = np.sqrt(mse)
+    with mlflow.start_run(run_name="evaluate_lstm_model"):
+        predictions = model.predict(X_test)
 
-    print("=== LSTM ===")
-    print(f"R² Score: {r2}")
-    print(f"MAE       : {mae}")
-    print(f"MSE       : {mse}")
-    print(f"RMSE      : {rmse}")
+        r2 = r2_score(y_test, predictions)
+        mae = mean_absolute_error(y_test, predictions)
+        mse = mean_squared_error(y_test, predictions)
+        rmse = np.sqrt(mse)
 
-    # Plot
-    plt.figure(figsize=(10, 6))
-    plt.plot(y_test[:200], label="Actual Consumption", color="blue")
-    plt.plot(
-        predictions[:200], label="Predicted Consumption", color="orange", linestyle="--"
-    )
-    plt.title("LSTM - Actual vs Predicted Electricity Consumption")
-    plt.xlabel("Time")
-    plt.ylabel("Consumption")
-    plt.legend()
-    plt.grid(True)
-    plt.savefig("08_reporting_figures/lstm_actual_vs_pred.png")
-    plt.show()
-    # ou plt.savefig(...)
+        print("=== LSTM ===")
+        print(f"R² Score: {r2}")
+        print(f"MAE       : {mae}")
+        print(f"MSE       : {mse}")
+        print(f"RMSE      : {rmse}")
+
+        # Plot
+        plt.figure(figsize=(10, 6))
+        plt.plot(y_test[:200], label="Actual Consumption", color="blue")
+        plt.plot(
+            predictions[:200],
+            label="Predicted Consumption",
+            color="orange",
+            linestyle="--",
+        )
+        plt.title("LSTM - Actual vs Predicted Electricity Consumption")
+        plt.xlabel("Time")
+        plt.ylabel("Consumption")
+        plt.legend()
+        plt.grid(True)
+        fig_path = "data/08_reporting/figures/lstm_actual_vs_pred.png"
+        plt.savefig(fig_path)
+        # plt.show()
+        mlflow.log_artifact(fig_path, artifact_path="figures")
 
 
 #############################################################################
@@ -281,7 +334,7 @@ def auto_ml(
     y_train: np.ndarray,
     X_test: np.ndarray,
     y_test: np.ndarray,
-    max_evals: int = 5,
+    max_evals: int = 1,
 ):
     """
     1) Pour chaque modèle dans MODELS:
