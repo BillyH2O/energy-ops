@@ -26,7 +26,7 @@ def create_pipeline(**kwargs) -> Pipeline:
             node(
                 func=scale_data,
                 inputs="df_with_time_features",
-                outputs="scaled_df",
+                outputs=dict(scaled_df="scaled_df", scaler="scaler"),
                 name="scale_data_node",
             ),
             # 4) Create sequences

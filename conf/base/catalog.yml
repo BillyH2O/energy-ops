@@ -6,6 +6,10 @@ processed_data:
   type: pandas.CSVDataset
   filepath: data/02_intermediate/processed_data.csv
 
+scaler:
+  type: pickle.PickleDataset
+  filepath: data/04_feature/scaler.pkl
+
 X_train:
   type: pickle.PickleDataset
   filepath: data/05_model_input/X_train.pkl
